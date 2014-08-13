@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class CardboardMagnet : MonoBehaviour
+public class MagnetSensor : MonoBehaviour
 {
-	public class MagnetListener : MonoBehaviour
+	public class OnCardboardTriggerListener : MonoBehaviour
 	{
-		public virtual void OnMagnetTriggered() {}
+		public virtual void onCardboardTrigger() {}
 	}
 
 	public int _sampleSize = 40;
@@ -20,6 +20,17 @@ public class CardboardMagnet : MonoBehaviour
 	void Start()
 	{
 		_window = new Queue<float> (_sampleSize + 1);
+	}
+
+	void OnEnable()
+	{
+		_window.Clear();
+		Input.compass.enabled = true;
+	}
+
+	void OnDisable()
+	{
+		Input.compass.enabled = false;
 	}
 
 	void Update ()
@@ -44,7 +55,7 @@ public class CardboardMagnet : MonoBehaviour
 		if(_current < _mean - _lowTrigger || _current > _mean + _highTrigger)
 		{
 			Debug.Log("!!! FIRE !!!");
-			if(_listener != null) _listener.OnMagnetTriggered();
+			if(_listener != null) _listener.onCardboardTrigger();
 		}
 	}
 
