@@ -18,7 +18,7 @@ public class MagnetSensor : MonoBehaviour
 	private List<Vector3> _sensorData;
 	private float[] _offsets;
 
-	void Start()
+	void Awake()
 	{
 		_sensorData = new List<Vector3>(WINDOW_SIZE);
 		_offsets = new float[SEGMENT_SIZE];
