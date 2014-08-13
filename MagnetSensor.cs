@@ -8,23 +8,25 @@ public class MagnetSensor : MonoBehaviour
 		public virtual void onCardboardTrigger() {}
 	}
 
-	public int _sampleSize = 40;
-	public int _lowTrigger = 30;
-	public int _highTrigger = 30;
-
 	public MagnetListener _listener;
 
-	private float _current, _mean, _tmp;
-	private Queue<float> _window;
+	private const int WINDOW_SIZE = 40;
+	private const int NUM_SEGMENTS = 2;
+	private const int SEGMENT_SIZE = WINDOW_SIZE / NUM_SEGMENTS;
+	private const int T1 = 30, T2 = 130;
+
+	private List<Vector3> _sensorData;
+	private float[] _offsets;
 
 	void Start()
 	{
-		_window = new Queue<float> (_sampleSize + 1);
+		_sensorData = new List<Vector3>(WINDOW_SIZE);
+		_offsets = new float[SEGMENT_SIZE];
 	}
 
 	void OnEnable()
 	{
-		_window.Clear();
+		_sensorData.Clear();
 		Input.compass.enabled = true;
 	}
 
@@ -35,37 +37,84 @@ public class MagnetSensor : MonoBehaviour
 
 	void Update ()
 	{
-		// Add most recent reading
-		_current = Input.compass.magneticHeading;
-		_window.Enqueue(_current);
+		Vector3 currentVector = Input.compass.rawVector;
+		if(currentVector.x == 0 && currentVector.y == 0 && currentVector.z == 0) return;
 
-		// If we don't have enough samples, keep reading
-		if(_window.Count < _sampleSize) return;
-		// If you have more samples than we need get rid of the oldest one
-		if(_window.Count > _sampleSize) _window.Dequeue();
+		if(_sensorData.Count >= WINDOW_SIZE) _sensorData.RemoveAt(0);
+		_sensorData.Add(currentVector);
 
-		_mean = FindMean(_window);
+		EvaluateModel();
+	}
 
-		Debug.Log("----------------------------------------");
-		Debug.Log("Current: " + _current);
-		Debug.Log("Mean: " + _mean);
-		Debug.Log("High Trigger: " + _highTrigger);
-		Debug.Log("Low Trigger: " + _lowTrigger);
+	private void EvaluateModel()
+	{
+		if(_sensorData.Count < WINDOW_SIZE) return;
 
-		if(_current < _mean - _lowTrigger || _current > _mean + _highTrigger)
+		float[] means = new float[2];
+		float[] maximums = new float[2];
+		float[] minimums = new float[2];
+
+		Vector3 baseline = _sensorData[_sensorData.Count - 1];
+
+		for(int i = 0; i < NUM_SEGMENTS; i++)
 		{
-			Debug.Log("!!! FIRE !!!");
-			if(_listener != null) _listener.onCardboardTrigger();
+			int segmentStart = 20 * i;
+			_offsets = ComputeOffsets(segmentStart, baseline);
+
+			means[i] = ComputeMean(_offsets);
+			maximums[i] = ComputeMaximum(_offsets);
+			minimums[i] = ComputeMinimum(_offsets);
+		}
+
+		float min1 = minimums[0];
+		float max2 = maximums[1];
+
+		if(min1 < T1 && max2 > T2)
+		{
+			_sensorData.Clear();
+			_listener.onCardboardTrigger();
 		}
 	}
 
-	private float FindMean(Queue<float> range)
+	private float[] ComputeOffsets(int start, Vector3 baseline)
 	{
-		_tmp = 0;
-		foreach(float heading in range)
+		for(int i = 0; i < SEGMENT_SIZE; i++)
 		{
-			_tmp += heading;
+			Vector3 point = _sensorData[start + i];
+			Vector3 o = new Vector3(point.x - baseline.x, point.y - baseline.y, point.z - baseline.z);
+			_offsets[i] = o.magnitude;
 		}
-		return _tmp / range.Count;
+
+		return _offsets;
+	}
+
+	private float ComputeMean(float[] offsets)
+	{
+		float sum = 0;
+		foreach(float o in offsets)
+		{
+			sum += o;
+		}
+		return sum / offsets.Length;
+	}
+
+	private float ComputeMaximum(float[] offsets)
+	{
+		float max = float.MinValue;
+		foreach(float o in offsets)
+		{
+			max = Mathf.Max(o, max);
+		}
+		return max;
+	}
+
+	private float ComputeMinimum(float[] offsets)
+	{
+		float min = float.MaxValue;
+		foreach(float o in offsets)
+		{
+			min = Mathf.Min(o, min);
+		}
+		return min;
 	}
 }
