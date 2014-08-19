@@ -69,7 +69,7 @@ public class MagnetSensor : MonoBehaviour
 		float min1 = minimums[0];
 		float max2 = maximums[1];
 
-		if((min1 < T1 && max2 > T2) || (min1 > T2 && max2 < T1))
+		if(min1 < T1 && max2 > T2)
 		{
 			_sensorData.Clear();
 			_listener.onCardboardTrigger();
