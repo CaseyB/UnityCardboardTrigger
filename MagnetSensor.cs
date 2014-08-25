@@ -32,12 +32,12 @@ public class MagnetSensor : MonoBehaviour
 		Input.compass.enabled = false;
 	}
 
-	void Update ()
+	void Update()
 	{
 		Vector3 currentVector = Input.compass.rawVector;
-		if(currentVector.x == 0 && currentVector.y == 0 && currentVector.z == 0) return;
+		if (currentVector.x == 0 && currentVector.y == 0 && currentVector.z == 0) return;
 
-		if(_sensorData.Count >= WINDOW_SIZE) _sensorData.RemoveAt(0);
+		if (_sensorData.Count >= WINDOW_SIZE) _sensorData.RemoveAt(0);
 		_sensorData.Add(currentVector);
 
 		EvaluateModel();
@@ -45,7 +45,7 @@ public class MagnetSensor : MonoBehaviour
 
 	private void EvaluateModel()
 	{
-		if(_sensorData.Count < WINDOW_SIZE) return;
+		if (_sensorData.Count < WINDOW_SIZE) return;
 
 		float[] means = new float[2];
 		float[] maximums = new float[2];
@@ -53,7 +53,7 @@ public class MagnetSensor : MonoBehaviour
 
 		Vector3 baseline = _sensorData[_sensorData.Count - 1];
 
-		for(int i = 0; i < NUM_SEGMENTS; i++)
+		for (int i = 0; i < NUM_SEGMENTS; i++)
 		{
 			int segmentStart = 20 * i;
 			_offsets = ComputeOffsets(segmentStart, baseline);
@@ -66,7 +66,7 @@ public class MagnetSensor : MonoBehaviour
 		float min1 = minimums[0];
 		float max2 = maximums[1];
 
-		if(min1 < T1 && max2 > T2)
+		if (min1 < T1 && max2 > T2)
 		{
 			_sensorData.Clear();
 			OnMagnetPull();
@@ -75,7 +75,7 @@ public class MagnetSensor : MonoBehaviour
 
 	private float[] ComputeOffsets(int start, Vector3 baseline)
 	{
-		for(int i = 0; i < SEGMENT_SIZE; i++)
+		for (int i = 0; i < SEGMENT_SIZE; i++)
 		{
 			Vector3 point = _sensorData[start + i];
 			Vector3 o = new Vector3(point.x - baseline.x, point.y - baseline.y, point.z - baseline.z);
@@ -88,7 +88,7 @@ public class MagnetSensor : MonoBehaviour
 	private float ComputeMean(float[] offsets)
 	{
 		float sum = 0;
-		foreach(float o in offsets)
+		foreach (float o in offsets)
 		{
 			sum += o;
 		}
@@ -98,7 +98,7 @@ public class MagnetSensor : MonoBehaviour
 	private float ComputeMaximum(float[] offsets)
 	{
 		float max = float.MinValue;
-		foreach(float o in offsets)
+		foreach (float o in offsets)
 		{
 			max = Mathf.Max(o, max);
 		}
@@ -108,7 +108,7 @@ public class MagnetSensor : MonoBehaviour
 	private float ComputeMinimum(float[] offsets)
 	{
 		float min = float.MaxValue;
-		foreach(float o in offsets)
+		foreach (float o in offsets)
 		{
 			min = Mathf.Min(o, min);
 		}
