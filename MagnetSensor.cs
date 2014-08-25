@@ -3,12 +3,9 @@ using System.Collections.Generic;
 
 public class MagnetSensor : MonoBehaviour
 {
-	public class OnCardboardTriggerListener : MonoBehaviour
-	{
-		public virtual void onCardboardTrigger() {}
-	}
-
-	public MagnetListener _listener;
+	public delegate void CardboardTrigger();
+	public static event CardboardTrigger OnCardboardTrigger;
+	
 
 	private const int WINDOW_SIZE = 40;
 	private const int NUM_SEGMENTS = 2;
@@ -72,7 +69,7 @@ public class MagnetSensor : MonoBehaviour
 		if(min1 < T1 && max2 > T2)
 		{
 			_sensorData.Clear();
-			_listener.onCardboardTrigger();
+			OnCardboardTrigger();
 		}
 	}
 
